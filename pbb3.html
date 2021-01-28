@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>MathJax TeX Test Page</title>
+		<script>
+		MathJax = {
+		  tex: {
+			inlineMath: [['$', '$'], ['\\(', '\\)']]
+		  },
+		jax: ["input/TeX", "output/HTML-CSS", "output/NativeMML"],
+		imageFont: null,
+		};
+		</script>
+		<script type="text/javascript" id="MathJax-script" async
+		  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js">
+		</script>
+		
+			<style>
+		body {
+ background-image: url('eceb7990b39fa62d4189f57f2076712f.png');
+  height:100vh;
+	background-size:cover;
+	background-position:center;
+}
+</style>
+		
+	</head>
+	<body>
+		<h1>Problem viewer</h1>
+		<input type="button" value="Verifică" onclick="checkProblems()">
+	</body>
+	<script type="text/javascript">
+		class Problem {
+			constructor(text, answers) {
+				this.text = text;
+				this.answers = answers;
+			}
+			createElement(index) {
+				var article = document.createElement("article");
+				var p = document.createElement("p");
+				p.innerHTML = this.text;
+				article.appendChild(p);
+				article.classList = index+" problem";
+
+				for (const [key, _value] of Object.entries(this.answers)) {
+					let label = document.createElement("label");
+					label.innerHTML = (key + " = ");
+					
+					let tick = document.createElement("img");
+					tick.classList = "tick "+key;
+					tick.src = "tick.png";
+					tick.width = 30;
+					tick.height = 30;
+					tick.hidden = true;
+					
+					let cross = document.createElement("img");
+					cross.classList = "cross "+key;
+					cross.src = "cross.png";
+					cross.width = 30;
+					cross.height = 30;
+					cross.hidden = true;
+				
+					let input = document.createElement("input");
+					input.classList = "answer "+key;
+					input.name = key;
+					input.type = "text";
+					
+					article.appendChild(label);
+					article.appendChild(input);
+					article.appendChild(tick);
+					article.appendChild(cross);
+				}
+				
+				return article;
+			}
+			check(index) {
+				for (const [key, value] of Object.entries(this.answers)) {
+					let article = document.getElementsByClassName(index+" problem")[0];
+					let input = article.getElementsByClassName("answer "+key)[0];
+					let tick = article.getElementsByClassName("tick "+key)[0]
+					let cross = article.getElementsByClassName("cross "+key)[0]
+					tick.hidden = cross.hidden = true;
+					if (input.value == value) {
+						tick.hidden = false;
+					}else {
+						cross.hidden = false;
+					}
+				}
+			}
+		}
+		
+		function editText(obj) {
+			var val = obj.innerHTML;
+			var input = document.createElement("input");
+			input.value = obj.getAttribute("hiddenvalue");
+			input.onblur = function() {
+				var val = this.value;
+				if (val == "") {
+					let parent = this.parentNode;
+					if (parent.classList.contains("problem") && parent.classList.contains("text")) {
+						val = "Write problem text here";
+					}else {
+						parent.parentNode.remove();
+						return;
+					}
+				}
+				
+				this.parentNode.setAttribute("hiddenvalue",val);
+				this.parentNode.innerHTML = val;
+				MathJax.typeset();
+			}
+			obj.innerHTML = "";
+			obj.appendChild(input);
+			input.focus();
+		}
+		
+		function newValue() {
+			let name = "a";
+			let body = document.getElementsByTagName("body")[0];
+			
+			let div = document.createElement("div");
+			div.className = "problem answer";
+			
+			let label = document.createElement("label");
+			label.setAttribute("hiddenvalue", name);
+			label.setAttribute("ondblclick", "editText(this)");
+			label.innerHTML = name;
+			label.className = "answer name";
+			
+			let equals = document.createElement("label");
+			equals.innerHTML = " = "
+			
+			let input = document.createElement("input");
+			input.className = "answer value";
+			
+			div.appendChild(label);
+			div.appendChild(equals);
+			div.appendChild(input);
+			body.appendChild(div);
+		}
+		
+		function creatorCopyProblemToClipboard() {
+			let promise = navigator.clipboard.writeText(JSON.stringify(problemFromCreator()));
+		}
+		
+		function problemFromCreator() {
+			let text = document.getElementsByClassName("problem text")[0].getAttribute("hiddenvalue");
+			let answer_divs = document.getElementsByClassName("problem answer");
+			let answers = {};
+			for (div of answer_divs) {
+				answers[div.getElementsByClassName("answer name")[0].getAttribute("hiddenvalue")] = div.getElementsByClassName("answer value")[0].value;
+			}
+			return new Problem(text, answers);
+		}
+		
+		function problemFromJSON(json) {
+			return Object.assign(new Problem, JSON.parse(json));
+		}
+		
+		var problems = [
+			problemFromJSON(String.raw`{"text":"Rezolvați în mulțimea numerelor reale ecuația $\\sqrt{3^x+1}=2$","answers":{"x":"1"}}`),
+		];
+		
+		function addProblemsToBody() {
+			let body = document.getElementsByTagName("body")[0];
+			for (let i = 0; i < problems.length; i++) {
+				let problem = problems[i];
+				body.appendChild(problem.createElement(i));
+			}
+		}
+		
+		function checkProblems() {
+			for (let i = 0; i < problems.length; i++) {
+				let problem = problems[i];
+				problem.check(i);
+			}
+		}
+		
+		addProblemsToBody();
+	</script>
+</html>
